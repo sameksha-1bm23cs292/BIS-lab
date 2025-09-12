@@ -1,0 +1,58 @@
+import random
+
+# Objective function
+def objective_function(x):
+    return -(x**2) + 5*x + 20
+
+# Particle class
+class Particle:
+    def __init__(self, bounds):
+        self.position = random.uniform(bounds[0], bounds[1])
+        self.velocity = 0
+        self.best_position = self.position
+        self.best_value = objective_function(self.position)
+
+    def update_velocity(self, global_best, w, c1, c2):
+        r1 = random.random()
+        r2 = random.random()
+        cognitive = c1 * r1 * (self.best_position - self.position)
+        social = c2 * r2 * (global_best - self.position)
+        self.velocity = w * self.velocity + cognitive + social
+
+    def update_position(self, bounds):
+        self.position += self.velocity
+        # Clamp within bounds
+        self.position = max(bounds[0], min(bounds[1], self.position))
+        value = objective_function(self.position)
+        if value > self.best_value:
+            self.best_value = value
+            self.best_position = self.position
+
+
+# PSO algorithm
+def pso(num_particles, bounds, max_iter, w=0.5, c1=1.5, c2=1.5):
+    particles = [Particle(bounds) for _ in range(num_particles)]
+    global_best = max(particles, key=lambda p: p.best_value)
+    gbest_position = global_best.best_position
+    gbest_value = global_best.best_value
+
+    for _ in range(max_iter):
+        for p in particles:
+            p.update_velocity(gbest_position, w, c1, c2)
+            p.update_position(bounds)
+        current_best = max(particles, key=lambda p: p.best_value)
+        if current_best.best_value > gbest_value:
+            gbest_value = current_best.best_value
+            gbest_position = current_best.best_position
+
+    return gbest_position, gbest_value
+
+
+# Example run
+if __name__ == "__main__":
+    best_pos, best_val = pso(
+        num_particles=9,
+        bounds=(-10, 10),  # search space
+        max_iter=50
+    )
+    print(f"Best position: {best_pos:.4f}, Best value: {best_val:.4f}")
